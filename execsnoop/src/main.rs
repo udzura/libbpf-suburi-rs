@@ -59,7 +59,11 @@ fn handle_lost_events(cpu: i32, count: u64) {
 fn main() -> Result<()> {
     let mut skel_builder: ExecsnoopSkelBuilder = ExecsnoopSkelBuilder::default();
     let mut open_skel: OpenExecsnoopSkel = skel_builder.open()?;
-    open_skel.rodata().targ_uid = env::var("TARGET_PID")?.parse()?;
+    if let Ok(uid) = env::var("TARGET_UID") {
+        open_skel.rodata().targ_uid = uid.parse()?;
+    } else {
+        open_skel.rodata().targ_uid = u32::MAX;
+    }
     open_skel.rodata().ignore_failed = 0;
     open_skel.rodata().max_args = 20;
 
