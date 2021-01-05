@@ -55,6 +55,7 @@ fn handle_lost_events(cpu: i32, count: u64) {
     eprintln!("Lost {} events on CPU {}", count, cpu);
 }
 
+#[allow(clippy::print_literal)]
 fn main() -> Result<()> {
     let mut skel_builder: ExecsnoopSkelBuilder = ExecsnoopSkelBuilder::default();
     let mut open_skel: OpenExecsnoopSkel = skel_builder.open()?;
