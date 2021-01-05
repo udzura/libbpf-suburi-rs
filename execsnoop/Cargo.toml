@@ -1,9 +1,11 @@
 [package]
 name = "execsnoop"
 version = "0.1.0"
-authors = ["vagrant"]
+authors = ["Uchio Kondo <udzura@udzura.jp>", "BCC developers"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
+
+libbpf-rs = "0.6.1"
+libc = "0.2"
+plain = "0.2"
