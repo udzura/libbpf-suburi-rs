@@ -1,6 +1,7 @@
 // Rust port of execsnoop.c
 // See also: https://github.com/iovisor/bcc/blob/master/libbpf-tools/execsnoop.c
 
+use core::mem;
 use core::time::Duration;
 use std::env;
 use std::str;
@@ -23,7 +24,7 @@ struct Event {
     pub retval: i32,
     pub args_count: i32,
     pub args_size: u32,
-    pub args: [u8; 32],
+    //pub args: [u8; 30],
 }
 unsafe impl Plain for Event {}
 
@@ -40,17 +41,14 @@ fn handle_event(_cpu: i32, data: &[u8]) {
     //     args: [0; 60 * 128],
     // };
     let mut event: Event = Event::default();
+    let event_size = mem::size_of_val(&event);
+
     plain::copy_from_bytes(&mut event, data).expect("Data buffer was too short");
 
-    let comm = str::from_utf8(&event.comm).unwrap();
-    let args = str::from_utf8(&event.args).unwrap();
+    let comm = str::from_utf8(&event.comm).unwrap().trim_end_matches(char::from(0));
+    let args: Vec<&str> = str::from_utf8(&data[event_size..]).unwrap().trim_end_matches(char::from(0)).split('\0').collect();
 
-    println!(
-        "{:16} {:6} {}",
-        comm,
-        event.pid,
-        args
-    );
+    println!("{:16} {:<6} {:?}", comm, event.pid, args);
 }
 
 fn handle_lost_events(cpu: i32, count: u64) {
@@ -66,6 +64,8 @@ fn main() -> Result<()> {
 
     let mut skel = open_skel.load()?;
     skel.attach()?;
+
+    println!("{:16} {:6} {}", "COMM", "PID", "ARGS");
 
     let perf = PerfBufferBuilder::new(skel.maps().events())
         .sample_cb(handle_event)
