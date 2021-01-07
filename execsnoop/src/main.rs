@@ -12,6 +12,9 @@ use libbpf_rs::PerfBufferBuilder;
 use plain::Plain;
 use structopt::StructOpt;
 
+#[macro_use]
+extern crate lazy_static;
+
 mod bpf;
 use bpf::*;
 
@@ -43,8 +46,17 @@ struct Event {
 }
 unsafe impl Plain for Event {}
 
+mod timer {
+    lazy_static! {
+        pub static ref TIMER: std::time::Instant = {
+            std::time::Instant::now()
+        };
+    }
+}
+
 fn handle_event(_cpu: i32, data: &[u8]) {
     let now = Local::now();
+    let elap = timer::TIMER.elapsed().as_nanos() as f32 / (1000*1000*1000) as f32;
     let mut event: Event = Event::default();
     let event_size = mem::size_of_val(&event);
 
@@ -54,8 +66,9 @@ fn handle_event(_cpu: i32, data: &[u8]) {
     let args: Vec<&str> = str::from_utf8(&data[event_size..]).unwrap().trim_end_matches(char::from(0)).split('\0').collect();
 
     println!(
-        "{:8} {:<6} {:16} {:<6} {:<6} {:3} {:?}",
+        "{:8} {:<8.3} {:<6} {:16} {:<6} {:<6} {:3} {:?}",
         now.format("%H:%M:%S"),
+        elap,
         event.uid,
         comm,
         event.pid,
@@ -93,10 +106,10 @@ fn main() -> Result<()> {
     skel.attach()?;
 
     println!(
-        "{:8} {:6} {:16} {:6} {:6} {:3} {:}",
-        "TIME", "UID", "PCOMM", "PID", "PPID", "RET", "ARGS"
+        "{:8} {:8} {:6} {:16} {:6} {:6} {:3} {:}",
+        "TIME", "TIME(s)", "UID", "PCOMM", "PID", "PPID", "RET", "ARGS"
     );
-
+    timer::TIMER.elapsed(); // To initialize static timer
     let perf = PerfBufferBuilder::new(skel.maps().events())
         .sample_cb(handle_event)
         .lost_cb(handle_lost_events)
