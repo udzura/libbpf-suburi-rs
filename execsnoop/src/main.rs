@@ -62,8 +62,8 @@ fn handle_event(_cpu: i32, data: &[u8]) {
 
     plain::copy_from_bytes(&mut event, data).expect("Data buffer was too short");
 
-    let comm = str::from_utf8(&event.comm).unwrap().trim_end_matches(char::from(0));
-    let args: Vec<&str> = str::from_utf8(&data[event_size..]).unwrap().trim_end_matches(char::from(0)).split('\0').collect();
+    let comm = str::from_utf8(&event.comm).unwrap().trim_end_matches('\0');
+    let args: Vec<&str> = str::from_utf8(&data[event_size..]).unwrap().trim_end_matches('\0').split('\0').collect();
 
     println!(
         "{:8} {:<8.3} {:<6} {:16} {:<6} {:<6} {:3} {:?}",
